@@ -28,11 +28,19 @@ const int bellyButton = 14;
 const int blinker = 15;
 const int motor = 12;
 const int speaker = 13;
+const int countdown = 45000; 
+
+bool timerRunning = false;
+unsigned long startTime;
+unsigned long previousMillis;
+const unsigned long interval = 2000;
+bool ledState = LOW;
 
 void alarm();
 void silentAlarm();
-void startAlarm();
 void wakeUpChirp();
+void startUpSound();
+void startTimer();
 
 void setup() {  
   pinMode(bellyButton, INPUT_PULLUP);
@@ -48,20 +56,37 @@ void loop() {
   int buttonState = digitalRead(bellyButton);
 
   if (buttonState == LOW) {
-    digitalWrite(blinker, HIGH);
+    startUpSound();
+    startTimer();
+    delay(50);
+  }
 
-    for (int i = 0; i < 5; i++) {
-      silentAlarm();
-      delay(200);
+  if (timerRunning) {
+    unsigned long currentTime = millis();
+    
+    if (currentTime - startTime <= countdown) { 
+      // Pulse the LED
+      if (currentTime - previousMillis >= interval) {
+        previousMillis = currentTime;
+        ledState = !ledState; 
+        digitalWrite(blinker, ledState);
+      }
+    } else {
+      timerRunning = false;
+      digitalWrite(blinker, LOW);
+      for (int i = 0; i < 5; i++) {
+        silentAlarm();
+        delay(200);
+      }
     }
   } else {
     digitalWrite(blinker, LOW);
-    digitalWrite(motor, LOW);
-    noTone(speaker);
   }
+}
 
-  // debounce
-  delay(50);
+void startTimer() {
+  timerRunning = true;
+  startTime = millis();
 }
 
 void wakeUpChirp() {
@@ -72,14 +97,7 @@ void wakeUpChirp() {
     delay(random(50, 200));
   }
   delay(200);
-  tone(speaker, 1500, 100);
-  delay(200);
-  tone(speaker, 1700, 100);
-  delay(200);
-  tone(speaker, 1500, 100);
-  delay(200);
-  tone(speaker, 1900, 300);
-  delay(400);
+  startUpSound();
 }
 
 void alarm() {
@@ -89,6 +107,17 @@ void alarm() {
   digitalWrite(motor, LOW);
   tone(speaker, 1500, 400);
   delay(600);
+}
+
+void startUpSound() {
+  tone(speaker, 1500, 100);
+  delay(200);
+  tone(speaker, 1700, 100);
+  delay(200);
+  tone(speaker, 1500, 100);
+  delay(200);
+  tone(speaker, 1900, 300);
+  delay(400);
 }
 
 void silentAlarm() {
